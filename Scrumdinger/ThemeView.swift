@@ -11,7 +11,7 @@ struct ThemeView: View {
     let theme: Theme
     
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        Text(theme.name)
             .padding(4)
             .frame(maxWidth: .infinity)
             .background(theme.mainColor)
