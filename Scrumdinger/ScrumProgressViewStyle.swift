@@ -15,6 +15,7 @@ struct ScrumProgressViewStyle: ProgressViewStyle {
             .padding(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             .accentColor(theme.mainColor)
             .background(theme.accentColor)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .cornerRadius(16)
     }
 }
