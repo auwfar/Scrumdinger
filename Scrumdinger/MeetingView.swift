@@ -12,6 +12,7 @@ struct MeetingView: View {
     
     var body: some View {
         ZStack {
+            MeetingHeaderView(secondsElapsed: <#T##Int#>, secondsRemaining: <#T##Int#>, theme: <#T##Theme#>)
             RoundedRectangle(cornerRadius: 16)
                 .fill(scrum.theme.mainColor)
             VStack {
