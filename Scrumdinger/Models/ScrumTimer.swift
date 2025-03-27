@@ -8,27 +8,33 @@
 import Foundation
 
 @MainActor
-final class ScrumTimer: ObservableObject {
-    struct Speaker: Identifiable {
-        let id: UUID = UUID()
-        var name: String
-        var isCompleted: Bool
+@Observable public final class ScrumTimer {
+    public struct Speaker: Identifiable {
+        public let id: UUID = UUID()
+        public var name: String
+        public var isCompleted: Bool
+        
+        init(name: String, isCompleted: Bool) {
+            self.name = name
+            self.isCompleted = isCompleted
+        }
     }
     
-    @Published var activeSpeaker = ""
-    @Published var secondsElapsed: Int = 0
-    @Published var secondsRemaining: Int = 0
-    private(set) var speakers: [Speaker] = []
+    public var activeSpeaker = ""
+    public var secondsElapsed: Int = 0
+    public var secondsRemaining: Int = 0
+    private var _speakers: [Speaker] = []
+    public var speakers: [Speaker] {
+        _speakers
+    }
+    public var speakerChangedAction: (() -> Void)?
     
-    private(set) var lengthInMinutes: Int
-    var speakerChangedAction: (() -> Void)?
-    
- 
+    private var lengthInMinutes: Int
     private weak var timer: Timer?
     private var timerStopped = false
     private var frequency: TimeInterval { 1.0 / 60.0 }
     private var lengthInSeconds: Int { lengthInMinutes * 60 }
-    private var secondsPerSpeaker: Int { (lengthInMinutes * 60) / speakers.count }
+    private var secondsPerSpeaker: Int { (lengthInMinutes * 60) / _speakers.count }
     private var secondsElapsedForSpeaker: Int = 0
     private var speakerIndex: Int = 0
     private var speakerText: String {
@@ -36,20 +42,22 @@ final class ScrumTimer: ObservableObject {
     }
     private var startDate: Date?
     
-    init(lengthInMinutes: Int = 0, attendees: [DailyScrum.Attendee] = []) {
+    public init(lengthInMinutes: Int = 0, attendeeNames: [String] = []) {
         self.lengthInMinutes = lengthInMinutes
-        self.speakers = attendees.speakers
+        self._speakers = Self.generateSpeakersList(with: attendeeNames)
         secondsRemaining = lengthInSeconds
         activeSpeaker = speakerText
     }
     
-    func startScrum() {
+    public func startScrum() {
         timer = Timer.scheduledTimer(withTimeInterval: frequency, repeats: true) { [weak self] timer in
             self?.update()
         }
+        timer?.tolerance = 0.1
+        changeToSpeaker(at: 0)
     }
     
-    func stopScrum() {
+    public func stopScrum() {
         timer?.invalidate()
         timerStopped = true
     }
@@ -60,10 +68,17 @@ final class ScrumTimer: ObservableObject {
         }
     }
     
+    public func reset(lengthInMinutes: Int, attendeeNames: [String]) {
+        self.lengthInMinutes = lengthInMinutes
+        self._speakers = Self.generateSpeakersList(with: attendeeNames)
+        secondsRemaining = lengthInSeconds
+        activeSpeaker = speakerText
+    }
+    
     private func changeToSpeaker(at index: Int) {
         if index > 0 {
             let previousSpeakerIndex = index - 1
-            speakers[previousSpeakerIndex].isCompleted = true
+            _speakers[previousSpeakerIndex].isCompleted = true
         }
         secondsElapsedForSpeaker = 0
         guard index < speakers.count else { return }
@@ -94,20 +109,8 @@ final class ScrumTimer: ObservableObject {
         }
     }
     
-    func reset(lengthInMinutes: Int, attendees: [DailyScrum.Attendee]) {
-        self.lengthInMinutes = lengthInMinutes
-        self.speakers = attendees.speakers
-        secondsRemaining = lengthInSeconds
-        activeSpeaker = speakerText
-    }
-}
-
-extension Array<DailyScrum.Attendee> {
-    var speakers: [ScrumTimer.Speaker] {
-        if isEmpty {
-            return [ScrumTimer.Speaker(name: "Speaker 1", isCompleted: false)]
-        } else {
-            return map { ScrumTimer.Speaker(name: $0.name, isCompleted: false) }
-        }
+    private static func generateSpeakersList(with names: [String]) -> [Speaker] {
+        guard !names.isEmpty else { return [Speaker(name: "Speaker 1", isCompleted: false)] }
+        return names.map { Speaker(name: $0, isCompleted: false) }
     }
 }
